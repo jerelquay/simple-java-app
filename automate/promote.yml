@@ -1,0 +1,24 @@
+---
+- name: Promote
+  hosts: "{{ env }}"
+  tasks:
+     - name: Clean backup folder in target environment
+       file: 
+         path: "{{ backupFolder }}/"
+         state: absent
+         
+     - name: Create backupFolder
+       file: 
+         path: "{{ backupFolder }}"
+         state: directory
+         
+     - name: Copy targetFolder contents to backupFolder
+       copy:
+         src: "{{ targetFolder }}/"
+         dest: "{{ backupFolder }}"
+         remote_src: yes
+   
+     - name: Clean target folder in target environment
+       file: 
+         path: "{{ targetFolder }}/"
+         state: absent

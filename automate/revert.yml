@@ -1,0 +1,39 @@
+---
+- name: Revert
+  hosts: "{{ env }}"
+  tasks:
+     - name: Check whether the undeploy script exists in targetFolder
+       stat:
+         path: "{{ targetFolder }}/deploy/undeploy.sh"
+       register: stat_result
+    
+     - name: Execute the undeploy script if it exists in targetFolder
+       action: shell cd {{ targetFolder }}; ./deploy/undeploy.sh {{ env }}
+       when: stat_result.stat.exists == True 
+    
+     - name: Clean targetFolder in target environment
+       file: 
+         path: "{{ targetFolder }}/"
+         state: absent
+         
+     - name: Create targetFolder
+       file: 
+         path: "{{ targetFolder }}"
+         state: directory
+         
+     - name: Copy backupFolder contents to targetFolder
+       copy:
+         src: "{{ backupFolder }}/"
+         dest: "{{ targetFolder }}"
+         remote_src: yes
+         
+     - name: Check whether the deploy script exists in targetFolder
+       stat:
+         path: "{{ targetFolder }}/deploy/deploy.sh"
+       register: stat_result
+       
+     - name: Execute the deploy script if it exists in targetFolder
+       shell: cd {{ targetFolder }}; ./deploy/deploy.sh {{ env }}
+       register: cmd_out
+       when: stat_result.stat.exists == True 
+

@@ -1,0 +1,29 @@
+---
+- name: Deploy
+  hosts: "{{ env }}"
+  tasks:
+    - name: Create targetFolder/backupFolder directory
+      file:
+        path: "{{ item.dest }}"
+        state: directory
+      with_items:
+         - { dest: '{{ targetFolder }}' }
+      
+    - name: Wait for target folder to exist
+      wait_for:
+        path: "{{ item }}"
+      with_items:
+          - "{{ targetFolder }}"
+          
+    - name: unarchive the tar
+      unarchive:
+        src: "{{ tarFile }}"
+        dest: "{{ targetFolder }}"
+   
+    - name: Wait for targetFolder deploy.sh to exist
+      wait_for:
+        path: "{{ targetFolder }}/deploy/deploy.sh"
+
+    - name: execute the deploy script
+      action: shell cd {{ targetFolder }}; ./deploy/deploy.sh {{ env }}
+

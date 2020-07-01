@@ -1,0 +1,35 @@
+---
+- hosts: "{{ host }}" 
+  tasks: 
+    - name: creating the rel_name and bin directory 
+      file: path={{ item }} state=directory
+      with_items:
+          - "{{ build_path }}/{{ rel_name }}"
+          - "{{ build_path }}/{{ rel_name }}/bin"
+    
+    - name: unarchive the file 
+      unarchive:
+          src: "../{{ rel_name }}.tar.gz"
+          dest: "{{ build_path }}/{{ rel_name }}"
+
+    - name: run the build 
+      action: shell cd {{ build_path}}/{{ rel_name }}; ./build/build.sh
+
+    - name: tar the release folder
+      action: shell cd "{{ build_path }}/{{rel_name}}"; tar --exclude=src --exclude=env --exclude=lib --exclude=build -zcf "{{ rel_name }}.tar.gz" *
+
+    - name: return tar.gz to jira server
+      fetch:
+       src: "{{ build_path }}/{{ rel_name }}/{{ rel_name }}.tar.gz"
+       flat: yes
+       dest: "{{ output_dir }}/{{ rel_name }}.tar.gz"
+
+    - name: clean the existing rel_name
+      file: 
+        state: absent
+        path: "{{ build_path}}/{{ rel_name }}"  
+
+    - name: Print output
+      debug:
+        msg: "output {{ output_dir }}{{ rel_name }}.tar.gz"
+

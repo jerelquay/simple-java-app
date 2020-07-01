@@ -1,0 +1,41 @@
+---
+- name: Undeploy
+  hosts: "{{ env }}"
+  tasks:
+     
+     
+     - name: Check whether the undeploy script exists
+       stat:
+         path: "{{ targetFolder }}/deploy/undeploy.sh"
+       register: stat_result
+    
+     - name: execute the undeploy script if it exists
+       action: shell cd {{ targetFolder }}; ./deploy/undeploy.sh {{ env }}
+       when: stat_result.stat.exists == True 
+
+
+     - name: Clean target folder in target environment
+       command: mv {{ item }} {{ item }}.old 
+       with_items: 
+          - "{{ targetFolder }}"
+
+     - name: Copy the contents from backupFolder to current targetFolder
+       copy:
+         src: "{{ backupFolder }}/"
+         dest: "{{ targetFolder }}"
+         remote_src: yes
+     - name: remove the targetfolder.old file
+       file:
+         path: "{{ targetFolder }}.old"
+         state: absent
+     
+ 
+     - name: Check whether the deploy script exists
+       stat:
+         path: "{{ targetFolder }}/deploy/deploy.sh"
+       register: stat_result
+
+     - name: execute the deploy script if it exists
+       action: shell cd {{ targetFolder }}; ./deploy/deploy.sh {{ env }}
+       when: stat_result.stat.exists == True 
+
